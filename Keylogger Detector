@@ -1,0 +1,91 @@
+import keyboard
+import time
+import threading
+import subprocess
+
+
+"""def check_system_integrity():
+    try:
+        # Run Tripwire to check system integrity
+        subprocess.run(["tripwire", "--check"], check=True)
+    except subprocess.CalledProcessError as e:
+        print("System integrity check detected changes:")
+        print(e.output.decode())"""
+
+"""def memory_scan(self):
+    try:
+        # Replace 'malware_plugin' with the appropriate Volatility plugin for keyloggers
+        subprocess.run(["vol.py", "--profile=Win7SP1x64", "malware_plugin", "-f", "memory_dump.raw"], check=True)
+    except subprocess.CalledProcessError as e:
+        print("Error during memory scan:")
+        print(e.output.decode())"""
+
+# import ctypes -- allows python to call a dynamic link library, used for functions in other languages
+"""def detect_keyboard_hook():
+    # List of functions commonly used by keyloggers
+    hook_functions = ["GetAsyncKeyState", "SetWindowsHookEx", "UnhookWindowsHookEx"]
+
+    # Check if any of the functions are hooked
+    for func_name in hook_functions:
+        func_address = ctypes.windll.kernel32.GetProcAddress(ctypes.windll.kernel32.GetModuleHandleA("user32"), func_name)
+        if func_address:
+            print(f"{func_name} address: {func_address}")
+            print("Possible keyboard hook detected!")
+            return True
+
+    print("No keyboard hook detected.")
+    return False"""
+
+
+class KeyloggerDetector:
+    def __init__(self):
+        self.keylog_detected = False
+        self.exit_flag = False
+
+    def detect_keylogger(self, event):
+        # Print the key event
+        # print(f"Key pressed: {event.name}")
+
+        # Check for 'esc' key to exit
+        if event.name == 'esc':
+            self.exit_flag = True
+
+        # Check for suspicious key combinations (you can customize this list)
+        suspicious_combinations = [
+            {"ctrl", "alt", "delete"},
+            {"alt", "f4"},
+            {"ctrl", "shift", "esc"},
+            {"win", 'l'}
+        ]
+
+        # Convert the current key event to a string
+        for combination in suspicious_combinations:
+            if all(keyboard.is_pressed(key) for key in combination):
+                self.keylog_detected = True
+                print("Suspicious key combination detected!")
+
+    def start_detection(self):
+        # Set the callback function for key events
+        keyboard.on_press(self.detect_keylogger)
+
+        # Check for suspicious activity every 5 seconds
+        while not (self.keylog_detected or self.exit_flag):
+            time.sleep(5)
+
+            # Check for 'esc' key to exit within the loop
+            if keyboard.is_pressed('esc'):
+                self.exit_flag = True
+
+        print("Exiting keylogger detection.")
+
+
+# Create an instance of the KeyloggerDetector
+detector = KeyloggerDetector()
+
+# Create a separate thread for keylogger detection
+detection_thread = threading.Thread(target=detector.start_detection)
+
+# Start the keylogger detection in a separate thread
+detection_thread.start()
+# Wait for the detection thread to finish before exiting
+detection_thread.join()
